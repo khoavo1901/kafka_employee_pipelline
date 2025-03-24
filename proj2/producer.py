@@ -34,6 +34,8 @@ from confluent_kafka.serialization import StringSerializer
 import psycopg2
 import pymysql
 import time
+from config import KAFKA_CONFIG, MYSQL_SOURCE_CONFIG
+
 
 employee_topic_name = "bf_employee_cdc"
 
@@ -43,8 +45,10 @@ class cdcProducer(Producer):
     def __init__(self, host="localhost", port="29092"):
         self.host = host
         self.port = port
-        producerConfig = {'bootstrap.servers':f"{self.host}:{self.port}",
-                          'acks' : 'all'}
+        producerConfig = {
+            'bootstrap.servers': KAFKA_CONFIG['bootstrap_servers'],
+            'acks': KAFKA_CONFIG['acks']
+        }
         super().__init__(producerConfig)
         self.running = True
         self.last_fetched_id = 0  
@@ -52,11 +56,11 @@ class cdcProducer(Producer):
     def fetch_cdc(self, encoder = StringSerializer('utf-8')):
         try:
             conn = pymysql.connect(
-                host='localhost',         # If running inside Docker, change to 'proj2-db_source-1' or proper service name
-                port=3308,                # Your Docker-exposed port
-                user='user',
-                password='password',
-                database='source_db',
+                host=MYSQL_SOURCE_CONFIG['host'],
+                port=MYSQL_SOURCE_CONFIG['port'],
+                user=MYSQL_SOURCE_CONFIG['user'],
+                password=MYSQL_SOURCE_CONFIG['password'],
+                database=MYSQL_SOURCE_CONFIG['database'],
                 cursorclass=pymysql.cursors.DictCursor
             )
             cur = conn.cursor()
